@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+ <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: #1a1a1a;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .greeting {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .clock {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 2rem;
+        }
+
+        .time-segment {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card {
+            background: #333;
+            border-radius: 10px;
+            padding: 20px;
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 5px;
+            position: relative;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 50%;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px 10px 0 0;
+        }
+
+        .weather {
+            font-size: 1.5rem;
+            text-align: center;
+            background: #333;
+            padding: 15px 30px;
+            border-radius: 25px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Seconds styling */
+        .time-segment:nth-child(3) .card {
+            font-size: 3rem;
+            padding: 15px;
+            opacity: 0.85;
+        }
+
+        .time-segment:nth-child(3)::after {
+            content: "Seconds";
+            font-size: 0.8rem;
+            margin-top: 5px;
+            opacity: 0.7;
+        }
+
+        @keyframes flip {
+            0% { transform: rotateX(0deg); }
+            50% { transform: rotateX(-90deg); }
+            100% { transform: rotateX(0deg); }
+        }
+
+        .flip {
+            animation: flip 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- ... (keep existing body content) ... --><body>
+    <div class="greeting" id="greeting"></div>
+    <div class="clock" id="clock"></div>
+    <div class="weather" id="weather">Loading weather...</div>
+
+
+    <script>
+        // Get or prompt for user's name
+        let userName = localStorage.getItem('userName');
+        if (!userName) {
+            userName = prompt('Please enter your name:') || 'Guest';
+            localStorage.setItem('userName', userName);
+        }
+
+        function updateTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+
+            // Update greeting with user's name
+            const greeting = document.getElementById('greeting');
+            if (hours < 12) {
+                greeting.textContent = `Good morning, ${userName}!`;
+            } else if (hours < 18) {
+                greeting.textContent = `Good afternoon, ${userName}!`;
+            } else {
+                greeting.textContent = `Good evening, ${userName}!`;
+            }
+
+            // ... (keep existing clock update logic) ...
+        }
+
+   // Weather for Sandhill, Belize in Fahrenheit
+        async function getWeather() {
+            try {
+                const response = await fetch(
+                    'https://api.openweathermap.org/data/2.5/weather?q=Sandhill,BZ&units=imperial&appid=e59fe270071be5ed24b5a1ec85ef84c3'
+                );
+                const data = await response.json();
+                const weather = document.getElementById('weather');
+                weather.innerHTML = `
+                    ${data.name} • ${Math.round(data.main.temp)}°F • ${data.weather[0].main}
+                `;
+            } catch (error) {
+                console.error('Error fetching weather:', error);
+                document.getElementById('weather').textContent = 'Weather unavailable';
+            }
+        }
+
+        // Initial calls
+        updateTime();
+        getWeather();
+        setInterval(updateTime, 1000);
+        setInterval(getWeather, 600000); // Update weather every 10 minutes
+    </script>
+</body>
+</html>
