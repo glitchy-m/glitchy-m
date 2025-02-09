@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment Tracker</title>
+    <style>
+        @font-face {
+            font-family: 'Funnel Display';
+            src: url('path/to/funnel-display.woff2') format('woff2');
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "San Francisco", "Funnel Display", Arial, sans-serif;
+            background-color: #121212;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            max-width: 800px;
+            margin: auto;
+            border-collapse: collapse;
+            background: #1e1e1e;
+            border-radius: 10px;
+        }
+        th, td {
+            border: 1px solid #444;
+            padding: 10px;
+        }
+        button {
+            background-color: #00bcd4;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin-top: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #008ba3;
+        }
+        input[type="text"], input[type="date"], select {
+            width: 90%;
+            padding: 5px;
+            background: #222;
+            color: white;
+            border: 1px solid #444;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Assignment Tracker</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Subject</th>
+                <th>Due Date</th>
+                <th>Completed</th>
+                <th>Remind Me</th>
+                <th>Remove</th>
+            </tr>
+        </thead>
+        <tbody id="task-list">
+            <tr>
+                <td><input type="text" placeholder="Enter title"></td>
+                <td>
+                    <select>
+                        <option>QR</option>
+                        <option>Language</option>
+                        <option>Maker</option>
+                        <option>Digital Arts</option>
+                        <option>Fine Arts</option>
+                        <option>Science</option>
+                        <option>SDP</option>
+                    </select>
+                </td>
+                <td><input type="date"></td>
+                <td><input type="checkbox"></td>
+                <td><button onclick="setReminder(this)">Remind Me</button></td>
+                <td><button onclick="removeTask(this)">Remove</button></td>
+            </tr>
+        </tbody>
+    </table>
+    <button onclick="addTask()">Add Assignment</button>
+    <button onclick="saveTasks()">Save</button>
+    <button onclick="loadTasks()">Load</button>
+    <script>
+        function addTask() {
+            let table = document.getElementById("task-list");
+            let row = table.insertRow();
+            row.innerHTML = `
+                <td><input type="text" placeholder="Enter title"></td>
+                <td>
+                    <select>
+                        <option>QR</option>
+                        <option>Language</option>
+                        <option>Maker</option>
+                        <option>Digital Arts</option>
+                        <option>Fine Arts</option>
+                        <option>Science</option>
+                        <option>SDP</option>
+                    </select>
+                </td>
+                <td><input type="date"></td>
+                <td><input type="checkbox"></td>
+                <td><button onclick="setReminder(this)">Remind Me</button></td>
+                <td><button onclick="removeTask(this)">Remove</button></td>
+            `;
+        }
+        
+        function removeTask(button) {
+            let row = button.parentElement.parentElement;
+            row.remove();
+        }
+        
+        function saveTasks() {
+            let tasks = [];
+            document.querySelectorAll("#task-list tr").forEach(row => {
+                let inputs = row.querySelectorAll("input, select");
+                tasks.push({
+                    title: inputs[0].value,
+                    subject: inputs[1].value,
+                    dueDate: inputs[2].value,
+                    completed: inputs[3].checked
+                });
+            });
+            document.cookie = "assignments=" + JSON.stringify(tasks) + ";path=/";
+        }
+        
+        function loadTasks() {
+            let tasks = document.cookie.replace(/(?:(?:^|.*;\s*)assignments\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+            if (tasks) {
+                tasks = JSON.parse(tasks);
+                let table = document.getElementById("task-list");
+                table.innerHTML = "";
+                tasks.forEach(task => {
+                    let row = table.insertRow();
+                    row.innerHTML = `
+                        <td><input type="text" value="${task.title}"></td>
+                        <td>
+                            <select>
+                                <option ${task.subject === 'QR' ? 'selected' : ''}>QR</option>
+                                <option ${task.subject === 'Language' ? 'selected' : ''}>Language</option>
+                                <option ${task.subject === 'Maker' ? 'selected' : ''}>Maker</option>
+                                <option ${task.subject === 'Digital Arts' ? 'selected' : ''}>Digital Arts</option>
+                                <option ${task.subject === 'Fine Arts' ? 'selected' : ''}>Fine Arts</option>
+                                <option ${task.subject === 'Science' ? 'selected' : ''}>Science</option>
+                                <option ${task.subject === 'SDP' ? 'selected' : ''}>SDP</option>
+                            </select>
+                        </td>
+                        <td><input type="date" value="${task.dueDate}"></td>
+                        <td><input type="checkbox" ${task.completed ? 'checked' : ''}></td>
+                        <td><button onclick="setReminder(this)">Remind Me</button></td>
+                        <td><button onclick="removeTask(this)">Remove</button></td>
+                    `;
+                });
+            }
+        }
+        
+        function setReminder(button) {
+            let row = button.parentElement.parentElement;
+            let title = row.querySelector("input[type='text']").value;
+            let dueDate = row.querySelector("input[type='date']").value;
+            if (!title || !dueDate) {
+                alert("Please enter both a title and a due date.");
+                return;
+            }
+            let reminderTime = new Date(dueDate).getTime() - 86400000;
+            if (reminderTime < Date.now()) {
+                alert("The due date has already passed!");
+                return;
+            }
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    let delay = reminderTime - Date.now();
+                    setTimeout(() => {
+                        new Notification("Assignment Reminder", { body: `Your assignment '${title}' is due soon!` });
+                    }, delay);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
