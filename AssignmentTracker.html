@@ -91,14 +91,8 @@
       width: 300px;
     }
     @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: scale(0.9);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
     }
     .modal-buttons button {
       margin: 10px;
@@ -140,7 +134,7 @@
       </tr>
     </thead>
     <tbody id="task-list">
-      <!-- Start with one blank assignment -->
+      <!-- One default blank assignment row -->
       <tr data-reminder="">
         <td><input type="text" placeholder="Enter title" /></td>
         <td>
@@ -157,10 +151,9 @@
         <td><input type="date" /></td>
         <td><input type="checkbox" /></td>
         <td>
-          <span class="bell" onclick="setReminder(this)">
-            <!-- Inline SVG for bell -->
+          <span class="bell" onclick="setReminder(this)"><?php /* inline SVG below */ ?>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"
-              xmlns="http://www.w3.org/2000/svg">
+                 xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2C10.3431 2 9 3.34315 9 5V6.08579C6.16344 7.1299 4 9.9203 4 13V17L2 19V20H22V19L20 17V13C20 9.9203 17.8366 7.1299 15 6.08579V5C15 3.34315 13.6569 2 12 2Z"/>
               <path d="M13.73 21C13.5544 21.3031 13.302 21.5544 13 21.73C12.6979 21.9056 12.3544 21.9999 12 21.9999C11.6456 21.9999 11.3021 21.9056 11 21.73C10.698 21.5544 10.4456 21.3031 10.27 21"/>
             </svg>
@@ -171,8 +164,8 @@
     </tbody>
   </table>
   <button onclick="addTask()">Add Assignment</button>
-  <button onclick="saveTasks()">Save</button>
-  <button onclick="loadTasks()">Load</button>
+  <button onclick="saveTasks()">Save to File</button>
+  <button onclick="loadTasks()">Load from File</button>
 
   <!-- Modal for setting reminder -->
   <div id="reminderModal" class="modal">
@@ -192,20 +185,38 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    // Global variables to hold the current bell and row for which a reminder is being set
+    // -------------------------------
+    // Service Worker Registration
+    // -------------------------------
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        self.addEventListener('notificationclick', event => {
+          event.notification.close();
+        });
+      `;
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(blob));
+    }
+
+    // -------------------------------
+    // Global Variables for Reminder Modal
+    // -------------------------------
     let currentBell = null;
     let currentRow = null;
 
-    // Returns the SVG for the bell icon as a string.
+    // Returns the inline SVG for the bell icon.
     function getBellSVG() {
-      return `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"
-                xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C10.3431 2 9 3.34315 9 5V6.08579C6.16344 7.1299 4 9.9203 4 13V17L2 19V20H22V19L20 17V13C20 9.9203 17.8366 7.1299 15 6.08579V5C15 3.34315 13.6569 2 12 2Z"/>
-                <path d="M13.73 21C13.5544 21.3031 13.302 21.5544 13 21.73C12.6979 21.9056 12.3544 21.9999 12 21.9999C11.6456 21.9999 11.3021 21.9056 11 21.73C10.698 21.5544 10.4456 21.3031 10.27 21"/>
-              </svg>`;
+      return `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"
+             xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C10.3431 2 9 3.34315 9 5V6.08579C6.16344 7.1299 4 9.9203 4 13V17L2 19V20H22V19L20 17V13C20 9.9203 17.8366 7.1299 15 6.08579V5C15 3.34315 13.6569 2 12 2Z"/>
+          <path d="M13.73 21C13.5544 21.3031 13.302 21.5544 13 21.73C12.6979 21.9056 12.3544 21.9999 12 21.9999C11.6456 21.9999 11.3021 21.9056 11 21.73C10.698 21.5544 10.4456 21.3031 10.27 21"/>
+        </svg>`;
     }
 
-    // Adds a new blank assignment row.
+    // -------------------------------
+    // Task Row Management
+    // -------------------------------
     function addTask() {
       let table = document.getElementById("task-list");
       let row = table.insertRow();
@@ -232,14 +243,15 @@
       `;
     }
 
-    // Removes the assignment row.
     function removeTask(button) {
       let row = button.parentElement.parentElement;
       row.remove();
       showToast("Assignment removed.");
     }
 
-    // Saves the current assignments (including reminder data) into cookies.
+    // -------------------------------
+    // Save / Load via JSON File
+    // -------------------------------
     function saveTasks() {
       let tasks = [];
       document.querySelectorAll("#task-list tr").forEach(row => {
@@ -252,69 +264,92 @@
           reminder: row.dataset.reminder || ""
         });
       });
-      document.cookie = "assignments=" + encodeURIComponent(JSON.stringify(tasks)) + ";path=/";
-      showToast("Assignments saved.");
+      const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "assignments.json";
+      a.click();
+      showToast("Assignments saved to file.");
     }
 
-    // Loads assignments from cookies and re-schedules any pending reminders.
     function loadTasks() {
-      let cookieStr = document.cookie.replace(
-        /(?:(?:^|.*;\s*)assignments\s*\=\s*([^;]*).*$)|^.*$/,
-        "$1"
-      );
-      if (cookieStr) {
-        let tasks = JSON.parse(decodeURIComponent(cookieStr));
-        let table = document.getElementById("task-list");
-        table.innerHTML = "";
-        tasks.forEach(task => {
-          let row = table.insertRow();
-          row.dataset.reminder = task.reminder || "";
-          row.innerHTML = `
-            <td><input type="text" value="${task.title}" /></td>
-            <td>
-              <select>
-                <option ${task.subject === 'QR' ? 'selected' : ''}>QR</option>
-                <option ${task.subject === 'Language' ? 'selected' : ''}>Language</option>
-                <option ${task.subject === 'Maker' ? 'selected' : ''}>Maker</option>
-                <option ${task.subject === 'Digital Arts' ? 'selected' : ''}>Digital Arts</option>
-                <option ${task.subject === 'Fine Arts' ? 'selected' : ''}>Fine Arts</option>
-                <option ${task.subject === 'Science' ? 'selected' : ''}>Science</option>
-                <option ${task.subject === 'SDP' ? 'selected' : ''}>SDP</option>
-              </select>
-            </td>
-            <td><input type="date" value="${task.dueDate}" /></td>
-            <td><input type="checkbox" ${task.completed ? 'checked' : ''} /></td>
-            <td>
-              <span class="bell" onclick="setReminder(this)">${getBellSVG()}</span>
-            </td>
-            <td><button onclick="removeTask(this)">Remove</button></td>
-          `;
-          if (task.reminder) {
-            let bell = row.querySelector(".bell");
-            bell.classList.add("active");
-            // Schedule notification if reminder time is still in the future.
-            let reminderDate = new Date(task.reminder).getTime();
-            if (reminderDate > Date.now()) {
-              let delay = reminderDate - Date.now();
-              let title = task.title;
-              setTimeout(() => {
-                new Notification("Assignment Reminder", {
-                  body: `Your assignment '${title}' is due soon!`
-                });
-                bell.classList.remove("active");
-              }, delay);
-            } else {
-              bell.classList.remove("active");
-            }
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "application/json";
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const tasks = JSON.parse(reader.result);
+            if (!Array.isArray(tasks)) throw new Error("Invalid JSON format.");
+            const table = document.getElementById("task-list");
+            table.innerHTML = "";
+            tasks.forEach(task => {
+              let row = table.insertRow();
+              row.dataset.reminder = task.reminder || "";
+              row.innerHTML = `
+                <td><input type="text" value="${task.title}" /></td>
+                <td>
+                  <select>
+                    <option ${task.subject === 'QR' ? 'selected' : ''}>QR</option>
+                    <option ${task.subject === 'Language' ? 'selected' : ''}>Language</option>
+                    <option ${task.subject === 'Maker' ? 'selected' : ''}>Maker</option>
+                    <option ${task.subject === 'Digital Arts' ? 'selected' : ''}>Digital Arts</option>
+                    <option ${task.subject === 'Fine Arts' ? 'selected' : ''}>Fine Arts</option>
+                    <option ${task.subject === 'Science' ? 'selected' : ''}>Science</option>
+                    <option ${task.subject === 'SDP' ? 'selected' : ''}>SDP</option>
+                  </select>
+                </td>
+                <td><input type="date" value="${task.dueDate}" /></td>
+                <td><input type="checkbox" ${task.completed ? 'checked' : ''} /></td>
+                <td>
+                  <span class="bell" onclick="setReminder(this)">${getBellSVG()}</span>
+                </td>
+                <td><button onclick="removeTask(this)">Remove</button></td>
+              `;
+              // If a reminder is set, schedule the notification.
+              if (task.reminder) {
+                let bell = row.querySelector(".bell");
+                bell.classList.add("active");
+                const reminderDate = new Date(task.reminder).getTime();
+                const title = task.title;
+                if (reminderDate > Date.now()) {
+                  const delay = reminderDate - Date.now();
+                  // If the experimental Notification Trigger is available, use it.
+                  if ('showTrigger' in Notification.prototype && navigator.serviceWorker) {
+                    navigator.serviceWorker.getRegistration().then(registration => {
+                      registration.showNotification("Assignment Reminder", {
+                        body: `Your assignment '${title}' is due soon!`,
+                        showTrigger: new TimestampTrigger(reminderDate)
+                      });
+                    });
+                  } else {
+                    setTimeout(() => {
+                      new Notification("Assignment Reminder", {
+                        body: `Your assignment '${title}' is due soon!`
+                      });
+                      bell.classList.remove("active");
+                    }, delay);
+                  }
+                } else {
+                  bell.classList.remove("active");
+                }
+              }
+            });
+            showToast("Assignments loaded from file.");
+          } catch (error) {
+            showToast("Invalid JSON file. Please check the file format.");
           }
-        });
-        showToast("Assignments loaded.");
-      } else {
-        showToast("No assignments found.");
-      }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
     }
 
-    // When the bell icon is clicked, show the custom modal for setting the reminder.
+    // -------------------------------
+    // Reminder Modal Handling
+    // -------------------------------
     function setReminder(icon) {
       currentBell = icon;
       currentRow = icon.parentElement.parentElement;
@@ -324,13 +359,11 @@
         showToast("Please fill out the title and due date before setting a reminder.");
         return;
       }
-      // Show the modal.
       document.getElementById("reminderTimeInput").value = "";
       document.getElementById("reminderError").innerText = "";
       document.getElementById("reminderModal").style.display = "flex";
     }
 
-    // Set up the modal's button handlers.
     document.getElementById("setReminderBtn").addEventListener("click", function () {
       let reminderTime = document.getElementById("reminderTimeInput").value;
       if (!reminderTime) {
@@ -344,14 +377,25 @@
       }
       currentRow.dataset.reminder = reminderTime;
       let title = currentRow.querySelector("input[type='text']").value;
-      let delay = reminderDate - Date.now();
+      const delay = reminderDate - Date.now();
       currentBell.classList.add("active");
-      setTimeout(() => {
-        new Notification("Assignment Reminder", {
-          body: `Your assignment '${title}' is due soon!`
+      // If available, schedule with the Notification Trigger API.
+      if ('showTrigger' in Notification.prototype && navigator.serviceWorker) {
+        navigator.serviceWorker.getRegistration().then(registration => {
+          registration.showNotification("Assignment Reminder", {
+            body: `Your assignment '${title}' is due soon!`,
+            showTrigger: new TimestampTrigger(reminderDate)
+          });
         });
-        currentBell.classList.remove("active");
-      }, delay);
+      } else {
+        setTimeout(() => {
+          new Notification("Assignment Reminder", {
+            body: `Your assignment '${title}' is due soon!`
+          });
+          currentBell.classList.remove("active");
+        }, delay);
+        showToast("Reminder set (only works if the tab remains open).");
+      }
       document.getElementById("reminderModal").style.display = "none";
       showToast("Reminder set.");
     });
@@ -360,7 +404,9 @@
       document.getElementById("reminderModal").style.display = "none";
     });
 
-    // Simple toast notification
+    // -------------------------------
+    // Toast Notification Function
+    // -------------------------------
     function showToast(message) {
       let toast = document.getElementById("toast");
       toast.innerText = message;
@@ -370,7 +416,9 @@
       }, 3000);
     }
 
-    // Request notification permission on load.
+    // -------------------------------
+    // Request Notification Permission on Load
+    // -------------------------------
     if (Notification.permission !== "granted") {
       Notification.requestPermission();
     }
