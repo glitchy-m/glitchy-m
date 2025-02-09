@@ -48,6 +48,23 @@
             border: 1px solid #444;
             border-radius: 5px;
         }
+        .bell {
+            font-size: 20px;
+            color: grey;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .bell.active {
+            color: yellow;
+            animation: ring 0.5s ease-in-out;
+        }
+        @keyframes ring {
+            0% { transform: rotate(0); }
+            25% { transform: rotate(15deg); }
+            50% { transform: rotate(-15deg); }
+            75% { transform: rotate(10deg); }
+            100% { transform: rotate(0); }
+        }
     </style>
 </head>
 <body>
@@ -79,7 +96,7 @@
                 </td>
                 <td><input type="date"></td>
                 <td><input type="checkbox"></td>
-                <td><button onclick="setReminder(this)">Remind Me</button></td>
+                <td><span class="bell" onclick="setReminder(this)">&#128276;</span></td>
                 <td><button onclick="removeTask(this)">Remove</button></td>
             </tr>
         </tbody>
@@ -106,7 +123,7 @@
                 </td>
                 <td><input type="date"></td>
                 <td><input type="checkbox"></td>
-                <td><button onclick="setReminder(this)">Remind Me</button></td>
+                <td><span class="bell" onclick="setReminder(this)">&#128276;</span></td>
                 <td><button onclick="removeTask(this)">Remove</button></td>
             `;
         }
@@ -116,71 +133,26 @@
             row.remove();
         }
         
-        function saveTasks() {
-            let tasks = [];
-            document.querySelectorAll("#task-list tr").forEach(row => {
-                let inputs = row.querySelectorAll("input, select");
-                tasks.push({
-                    title: inputs[0].value,
-                    subject: inputs[1].value,
-                    dueDate: inputs[2].value,
-                    completed: inputs[3].checked
-                });
-            });
-            document.cookie = "assignments=" + JSON.stringify(tasks) + ";path=/";
-        }
-        
-        function loadTasks() {
-            let tasks = document.cookie.replace(/(?:(?:^|.*;\s*)assignments\s*\=\s*([^;]*).*$)|^.*$/, "$1");
-            if (tasks) {
-                tasks = JSON.parse(tasks);
-                let table = document.getElementById("task-list");
-                table.innerHTML = "";
-                tasks.forEach(task => {
-                    let row = table.insertRow();
-                    row.innerHTML = `
-                        <td><input type="text" value="${task.title}"></td>
-                        <td>
-                            <select>
-                                <option ${task.subject === 'QR' ? 'selected' : ''}>QR</option>
-                                <option ${task.subject === 'Language' ? 'selected' : ''}>Language</option>
-                                <option ${task.subject === 'Maker' ? 'selected' : ''}>Maker</option>
-                                <option ${task.subject === 'Digital Arts' ? 'selected' : ''}>Digital Arts</option>
-                                <option ${task.subject === 'Fine Arts' ? 'selected' : ''}>Fine Arts</option>
-                                <option ${task.subject === 'Science' ? 'selected' : ''}>Science</option>
-                                <option ${task.subject === 'SDP' ? 'selected' : ''}>SDP</option>
-                            </select>
-                        </td>
-                        <td><input type="date" value="${task.dueDate}"></td>
-                        <td><input type="checkbox" ${task.completed ? 'checked' : ''}></td>
-                        <td><button onclick="setReminder(this)">Remind Me</button></td>
-                        <td><button onclick="removeTask(this)">Remove</button></td>
-                    `;
-                });
-            }
-        }
-        
-        function setReminder(button) {
-            let row = button.parentElement.parentElement;
+        function setReminder(icon) {
+            let row = icon.parentElement.parentElement;
             let title = row.querySelector("input[type='text']").value;
             let dueDate = row.querySelector("input[type='date']").value;
             if (!title || !dueDate) {
-                alert("Please enter both a title and a due date.");
                 return;
             }
-            let reminderTime = new Date(dueDate).getTime() - 86400000;
-            if (reminderTime < Date.now()) {
-                alert("The due date has already passed!");
+            let reminderTime = prompt("Enter reminder time (YYYY-MM-DD HH:MM)", "");
+            if (!reminderTime) return;
+            let reminderDate = new Date(reminderTime).getTime();
+            if (reminderDate < Date.now()) {
+                alert("The reminder time has already passed!");
                 return;
             }
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") {
-                    let delay = reminderTime - Date.now();
-                    setTimeout(() => {
-                        new Notification("Assignment Reminder", { body: `Your assignment '${title}' is due soon!` });
-                    }, delay);
-                }
-            });
+            icon.classList.add("active");
+            document.cookie = `reminder_${title}=${reminderTime};path=/`;
+            setTimeout(() => {
+                new Notification("Assignment Reminder", { body: `Your assignment '${title}' is due soon!` });
+                icon.classList.remove("active");
+            }, reminderDate - Date.now());
         }
     </script>
 </body>
