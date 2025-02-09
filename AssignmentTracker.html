@@ -1,159 +1,379 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assignment Tracker</title>
-    <style>
-        @font-face {
-            font-family: 'Funnel Display';
-            src: url('path/to/funnel-display.woff2') format('woff2');
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "San Francisco", "Funnel Display", Arial, sans-serif;
-            background-color: #121212;
-            color: white;
-            text-align: center;
-            padding: 20px;
-        }
-        table {
-            width: 100%;
-            max-width: 800px;
-            margin: auto;
-            border-collapse: collapse;
-            background: #1e1e1e;
-            border-radius: 10px;
-        }
-        th, td {
-            border: 1px solid #444;
-            padding: 10px;
-        }
-        button {
-            background-color: #00bcd4;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            margin-top: 10px;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-        button:hover {
-            background-color: #008ba3;
-        }
-        input[type="text"], input[type="date"], select {
-            width: 90%;
-            padding: 5px;
-            background: #222;
-            color: white;
-            border: 1px solid #444;
-            border-radius: 5px;
-        }
-        .bell {
-            font-size: 20px;
-            color: grey;
-            cursor: pointer;
-            transition: color 0.3s;
-        }
-        .bell.active {
-            color: yellow;
-            animation: ring 0.5s ease-in-out;
-        }
-        @keyframes ring {
-            0% { transform: rotate(0); }
-            25% { transform: rotate(15deg); }
-            50% { transform: rotate(-15deg); }
-            75% { transform: rotate(10deg); }
-            100% { transform: rotate(0); }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assignment Tracker</title>
+  <style>
+    @font-face {
+      font-family: 'Funnel Display';
+      src: url('path/to/funnel-display.woff2') format('woff2');
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "San Francisco", "Funnel Display", Arial, sans-serif;
+      background-color: #121212;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      max-width: 800px;
+      margin: auto;
+      border-collapse: collapse;
+      background: #1e1e1e;
+      border-radius: 10px;
+    }
+    th,
+    td {
+      border: 1px solid #444;
+      padding: 10px;
+    }
+    button {
+      background-color: #00bcd4;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      margin-top: 10px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    button:hover {
+      background-color: #008ba3;
+    }
+    input[type="text"],
+    input[type="date"],
+    select {
+      width: 90%;
+      padding: 5px;
+      background: #222;
+      color: white;
+      border: 1px solid #444;
+      border-radius: 5px;
+    }
+    /* Bell styling with inline SVG */
+    .bell {
+      cursor: pointer;
+      transition: color 0.3s;
+      display: inline-block;
+      color: grey;
+    }
+    .bell.active {
+      color: yellow;
+      animation: ring 0.5s ease-in-out;
+    }
+    @keyframes ring {
+      0% { transform: rotate(0); }
+      25% { transform: rotate(15deg); }
+      50% { transform: rotate(-15deg); }
+      75% { transform: rotate(10deg); }
+      100% { transform: rotate(0); }
+    }
+    /* Modal styling */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: #222;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      animation: fadeIn 0.5s ease-in-out;
+      width: 300px;
+    }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    .modal-buttons button {
+      margin: 10px;
+    }
+    .error {
+      color: #ff4444;
+      margin-top: 10px;
+    }
+    /* Toast styling */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 5px;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+      z-index: 1100;
+    }
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
 </head>
 <body>
-    <h1>Assignment Tracker</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Subject</th>
-                <th>Due Date</th>
-                <th>Completed</th>
-                <th>Remind Me</th>
-                <th>Remove</th>
-            </tr>
-        </thead>
-        <tbody id="task-list">
-            <tr>
-                <td><input type="text" placeholder="Enter title"></td>
-                <td>
-                    <select>
-                        <option>QR</option>
-                        <option>Language</option>
-                        <option>Maker</option>
-                        <option>Digital Arts</option>
-                        <option>Fine Arts</option>
-                        <option>Science</option>
-                        <option>SDP</option>
-                    </select>
-                </td>
-                <td><input type="date"></td>
-                <td><input type="checkbox"></td>
-                <td><span class="bell" onclick="setReminder(this)">&#128276;</span></td>
-                <td><button onclick="removeTask(this)">Remove</button></td>
-            </tr>
-        </tbody>
-    </table>
-    <button onclick="addTask()">Add Assignment</button>
-    <button onclick="saveTasks()">Save</button>
-    <button onclick="loadTasks()">Load</button>
-    <script>
-        function addTask() {
-            let table = document.getElementById("task-list");
-            let row = table.insertRow();
-            row.innerHTML = `
-                <td><input type="text" placeholder="Enter title"></td>
-                <td>
-                    <select>
-                        <option>QR</option>
-                        <option>Language</option>
-                        <option>Maker</option>
-                        <option>Digital Arts</option>
-                        <option>Fine Arts</option>
-                        <option>Science</option>
-                        <option>SDP</option>
-                    </select>
-                </td>
-                <td><input type="date"></td>
-                <td><input type="checkbox"></td>
-                <td><span class="bell" onclick="setReminder(this)">&#128276;</span></td>
-                <td><button onclick="removeTask(this)">Remove</button></td>
-            `;
-        }
-        
-        function removeTask(button) {
-            let row = button.parentElement.parentElement;
-            row.remove();
-        }
-        
-        function setReminder(icon) {
-            let row = icon.parentElement.parentElement;
-            let title = row.querySelector("input[type='text']").value;
-            let dueDate = row.querySelector("input[type='date']").value;
-            if (!title || !dueDate) {
-                return;
+  <h1>Assignment Tracker</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Subject</th>
+        <th>Due Date</th>
+        <th>Completed</th>
+        <th>Remind Me</th>
+        <th>Remove</th>
+      </tr>
+    </thead>
+    <tbody id="task-list">
+      <!-- Start with one blank assignment -->
+      <tr data-reminder="">
+        <td><input type="text" placeholder="Enter title" /></td>
+        <td>
+          <select>
+            <option>QR</option>
+            <option>Language</option>
+            <option>Maker</option>
+            <option>Digital Arts</option>
+            <option>Fine Arts</option>
+            <option>Science</option>
+            <option>SDP</option>
+          </select>
+        </td>
+        <td><input type="date" /></td>
+        <td><input type="checkbox" /></td>
+        <td>
+          <span class="bell" onclick="setReminder(this)">
+            <!-- Inline SVG for bell -->
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"
+              xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C10.3431 2 9 3.34315 9 5V6.08579C6.16344 7.1299 4 9.9203 4 13V17L2 19V20H22V19L20 17V13C20 9.9203 17.8366 7.1299 15 6.08579V5C15 3.34315 13.6569 2 12 2Z"/>
+              <path d="M13.73 21C13.5544 21.3031 13.302 21.5544 13 21.73C12.6979 21.9056 12.3544 21.9999 12 21.9999C11.6456 21.9999 11.3021 21.9056 11 21.73C10.698 21.5544 10.4456 21.3031 10.27 21"/>
+            </svg>
+          </span>
+        </td>
+        <td><button onclick="removeTask(this)">Remove</button></td>
+      </tr>
+    </tbody>
+  </table>
+  <button onclick="addTask()">Add Assignment</button>
+  <button onclick="saveTasks()">Save</button>
+  <button onclick="loadTasks()">Load</button>
+
+  <!-- Modal for setting reminder -->
+  <div id="reminderModal" class="modal">
+    <div class="modal-content">
+      <h2>Set Reminder</h2>
+      <label for="reminderTimeInput">When do you want to be reminded?</label><br />
+      <input type="datetime-local" id="reminderTimeInput" /><br />
+      <div id="reminderError" class="error"></div>
+      <div class="modal-buttons">
+        <button id="setReminderBtn">Set Reminder</button>
+        <button id="cancelReminderBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast for notifications -->
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // Global variables to hold the current bell and row for which a reminder is being set
+    let currentBell = null;
+    let currentRow = null;
+
+    // Returns the SVG for the bell icon as a string.
+    function getBellSVG() {
+      return `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"
+                xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C10.3431 2 9 3.34315 9 5V6.08579C6.16344 7.1299 4 9.9203 4 13V17L2 19V20H22V19L20 17V13C20 9.9203 17.8366 7.1299 15 6.08579V5C15 3.34315 13.6569 2 12 2Z"/>
+                <path d="M13.73 21C13.5544 21.3031 13.302 21.5544 13 21.73C12.6979 21.9056 12.3544 21.9999 12 21.9999C11.6456 21.9999 11.3021 21.9056 11 21.73C10.698 21.5544 10.4456 21.3031 10.27 21"/>
+              </svg>`;
+    }
+
+    // Adds a new blank assignment row.
+    function addTask() {
+      let table = document.getElementById("task-list");
+      let row = table.insertRow();
+      row.dataset.reminder = "";
+      row.innerHTML = `
+        <td><input type="text" placeholder="Enter title" /></td>
+        <td>
+          <select>
+            <option>QR</option>
+            <option>Language</option>
+            <option>Maker</option>
+            <option>Digital Arts</option>
+            <option>Fine Arts</option>
+            <option>Science</option>
+            <option>SDP</option>
+          </select>
+        </td>
+        <td><input type="date" /></td>
+        <td><input type="checkbox" /></td>
+        <td>
+          <span class="bell" onclick="setReminder(this)">${getBellSVG()}</span>
+        </td>
+        <td><button onclick="removeTask(this)">Remove</button></td>
+      `;
+    }
+
+    // Removes the assignment row.
+    function removeTask(button) {
+      let row = button.parentElement.parentElement;
+      row.remove();
+      showToast("Assignment removed.");
+    }
+
+    // Saves the current assignments (including reminder data) into cookies.
+    function saveTasks() {
+      let tasks = [];
+      document.querySelectorAll("#task-list tr").forEach(row => {
+        let inputs = row.querySelectorAll("input, select");
+        tasks.push({
+          title: inputs[0].value,
+          subject: inputs[1].value,
+          dueDate: inputs[2].value,
+          completed: inputs[3].checked,
+          reminder: row.dataset.reminder || ""
+        });
+      });
+      document.cookie = "assignments=" + encodeURIComponent(JSON.stringify(tasks)) + ";path=/";
+      showToast("Assignments saved.");
+    }
+
+    // Loads assignments from cookies and re-schedules any pending reminders.
+    function loadTasks() {
+      let cookieStr = document.cookie.replace(
+        /(?:(?:^|.*;\s*)assignments\s*\=\s*([^;]*).*$)|^.*$/,
+        "$1"
+      );
+      if (cookieStr) {
+        let tasks = JSON.parse(decodeURIComponent(cookieStr));
+        let table = document.getElementById("task-list");
+        table.innerHTML = "";
+        tasks.forEach(task => {
+          let row = table.insertRow();
+          row.dataset.reminder = task.reminder || "";
+          row.innerHTML = `
+            <td><input type="text" value="${task.title}" /></td>
+            <td>
+              <select>
+                <option ${task.subject === 'QR' ? 'selected' : ''}>QR</option>
+                <option ${task.subject === 'Language' ? 'selected' : ''}>Language</option>
+                <option ${task.subject === 'Maker' ? 'selected' : ''}>Maker</option>
+                <option ${task.subject === 'Digital Arts' ? 'selected' : ''}>Digital Arts</option>
+                <option ${task.subject === 'Fine Arts' ? 'selected' : ''}>Fine Arts</option>
+                <option ${task.subject === 'Science' ? 'selected' : ''}>Science</option>
+                <option ${task.subject === 'SDP' ? 'selected' : ''}>SDP</option>
+              </select>
+            </td>
+            <td><input type="date" value="${task.dueDate}" /></td>
+            <td><input type="checkbox" ${task.completed ? 'checked' : ''} /></td>
+            <td>
+              <span class="bell" onclick="setReminder(this)">${getBellSVG()}</span>
+            </td>
+            <td><button onclick="removeTask(this)">Remove</button></td>
+          `;
+          if (task.reminder) {
+            let bell = row.querySelector(".bell");
+            bell.classList.add("active");
+            // Schedule notification if reminder time is still in the future.
+            let reminderDate = new Date(task.reminder).getTime();
+            if (reminderDate > Date.now()) {
+              let delay = reminderDate - Date.now();
+              let title = task.title;
+              setTimeout(() => {
+                new Notification("Assignment Reminder", {
+                  body: `Your assignment '${title}' is due soon!`
+                });
+                bell.classList.remove("active");
+              }, delay);
+            } else {
+              bell.classList.remove("active");
             }
-            let reminderTime = prompt("Enter reminder time (YYYY-MM-DD HH:MM)", "");
-            if (!reminderTime) return;
-            let reminderDate = new Date(reminderTime).getTime();
-            if (reminderDate < Date.now()) {
-                alert("The reminder time has already passed!");
-                return;
-            }
-            icon.classList.add("active");
-            document.cookie = `reminder_${title}=${reminderTime};path=/`;
-            setTimeout(() => {
-                new Notification("Assignment Reminder", { body: `Your assignment '${title}' is due soon!` });
-                icon.classList.remove("active");
-            }, reminderDate - Date.now());
-        }
-    </script>
+          }
+        });
+        showToast("Assignments loaded.");
+      } else {
+        showToast("No assignments found.");
+      }
+    }
+
+    // When the bell icon is clicked, show the custom modal for setting the reminder.
+    function setReminder(icon) {
+      currentBell = icon;
+      currentRow = icon.parentElement.parentElement;
+      let title = currentRow.querySelector("input[type='text']").value;
+      let dueDate = currentRow.querySelector("input[type='date']").value;
+      if (!title || !dueDate) {
+        showToast("Please fill out the title and due date before setting a reminder.");
+        return;
+      }
+      // Show the modal.
+      document.getElementById("reminderTimeInput").value = "";
+      document.getElementById("reminderError").innerText = "";
+      document.getElementById("reminderModal").style.display = "flex";
+    }
+
+    // Set up the modal's button handlers.
+    document.getElementById("setReminderBtn").addEventListener("click", function () {
+      let reminderTime = document.getElementById("reminderTimeInput").value;
+      if (!reminderTime) {
+        document.getElementById("reminderError").innerText = "Please select a reminder time.";
+        return;
+      }
+      let reminderDate = new Date(reminderTime).getTime();
+      if (reminderDate < Date.now()) {
+        document.getElementById("reminderError").innerText = "The reminder time has already passed.";
+        return;
+      }
+      currentRow.dataset.reminder = reminderTime;
+      let title = currentRow.querySelector("input[type='text']").value;
+      let delay = reminderDate - Date.now();
+      currentBell.classList.add("active");
+      setTimeout(() => {
+        new Notification("Assignment Reminder", {
+          body: `Your assignment '${title}' is due soon!`
+        });
+        currentBell.classList.remove("active");
+      }, delay);
+      document.getElementById("reminderModal").style.display = "none";
+      showToast("Reminder set.");
+    });
+
+    document.getElementById("cancelReminderBtn").addEventListener("click", function () {
+      document.getElementById("reminderModal").style.display = "none";
+    });
+
+    // Simple toast notification
+    function showToast(message) {
+      let toast = document.getElementById("toast");
+      toast.innerText = message;
+      toast.classList.add("show");
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 3000);
+    }
+
+    // Request notification permission on load.
+    if (Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+  </script>
 </body>
 </html>
