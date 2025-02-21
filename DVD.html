@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DVD Logo Screensaver Popup</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 50px;
+      margin-left:10%;
+      margin-right:10%;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>DVD logo thing</h1>
+  <p>Ever wanted a real DVD logo on your screen?<br>Don't want to watch those boring videos?<br><br><b>Hit the button below!</b></p>
+  <button id="openPopup">Open DVD Logo Screensaver</button>
+  <br><p>This button will spawn a popup that bounces around your screen, like the logo. (Yes, it actually can hit the corner.)</p>
+
+  <script>
+    document.getElementById('openPopup').addEventListener('click', function() {
+      // Open a new popup window with no browser chrome
+      const popup = window.open(
+        '',
+        'dvdLogoPopup',
+        'width=220,height=200,toolbar=no,menubar=no,scrollbars=no,resizable=no'
+      );
+      
+      if (popup) {
+        popup.document.write(`
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <title>DVD Logo</title>
+            <style>
+              /* Remove margins and hide scrollbars */
+              html, body {
+                margin: 0;
+                padding: 0;
+                background: white;
+                overflow: hidden;
+              }
+              /* Ensure the image fills the popup window */
+              img {
+                display: block;
+                width: 100%;
+                height: auto;
+              }
+            </style>
+          </head>
+          <body>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/64/DVD_VIDEO_logo.png" alt="DVD Logo">
+            <script>
+              (function() {
+                // Initial velocities for movement
+                let dx = 4, dy = 4;
+                // Get initial position of the window
+                let x = window.screenX, y = window.screenY;
+                // Get the popup window dimensions
+                let winWidth = window.outerWidth;
+                let winHeight = window.outerHeight;
+                // Get available screen dimensions
+                const availWidth = screen.availWidth;
+                const availHeight = screen.availHeight;
+                
+                setInterval(function() {
+                  x += dx;
+                  y += dy;
+                  // Reverse horizontal direction when hitting screen edges
+                  if (x <= 0 || x + winWidth >= availWidth) {
+                    dx = -dx;
+                    x += dx;
+                  }
+                  // Reverse vertical direction when hitting screen edges
+                  if (y <= 0 || y + winHeight >= availHeight) {
+                    dy = -dy;
+                    y += dy;
+                  }
+                  window.moveTo(x, y);
+                }, 20);
+              })();
+            <\/script>
+          </body>
+          </html>
+        `);
+        popup.document.close();
+      } else {
+        alert("Popup blocked. Please allow popups for this site.");
+      }
+    });
+  </script>
+</body>
+</html>
