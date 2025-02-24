@@ -8,8 +8,8 @@
       font-family: sans-serif;
       text-align: center;
       margin-top: 50px;
-      margin-left:10%;
-      margin-right:10%;
+      margin-left: 10%;
+      margin-right: 10%;
     }
     button {
       padding: 10px 20px;
@@ -26,13 +26,15 @@
 
   <script>
     document.getElementById('openPopup').addEventListener('click', function() {
-      // Open a new popup window with no browser chrome
+      const logoWidth = 220;
+      const logoHeight = 100;
+
       const popup = window.open(
         '',
         'dvdLogoPopup',
-        'width=220,height=200,toolbar=no,menubar=no,scrollbars=no,resizable=no'
+        `width=${logoWidth},height=${logoHeight},toolbar=no,menubar=no,scrollbars=no,resizable=no`
       );
-      
+
       if (popup) {
         popup.document.write(`
           <!DOCTYPE html>
@@ -41,46 +43,46 @@
             <meta charset="UTF-8">
             <title>DVD Logo</title>
             <style>
-              /* Remove margins and hide scrollbars */
               html, body {
                 margin: 0;
                 padding: 0;
                 background: white;
                 overflow: hidden;
               }
-              /* Ensure the image fills the popup window */
               img {
-                display: block;
-                width: 100%;
-                height: auto;
+                position: absolute;
+                width: ${logoWidth}px;
+                height: ${logoHeight}px;
               }
             </style>
           </head>
           <body>
-            <img src="https://upload.wikimedia.org/wikipedia/commons/6/64/DVD_VIDEO_logo.png" alt="DVD Logo">
+            <img id="dvdLogo" src="https://upload.wikimedia.org/wikipedia/commons/6/64/DVD_VIDEO_logo.png" alt="DVD Logo">
             <script>
               (function() {
-                // Initial velocities for movement
+                const img = document.getElementById('dvdLogo');
                 let dx = 4, dy = 4;
-                // Get initial position of the window
-                let x = window.screenX, y = window.screenY;
-                // Get the popup window dimensions
-                let winWidth = window.outerWidth;
-                let winHeight = window.outerHeight;
-                // Get available screen dimensions
-                const availWidth = screen.availWidth;
-                const availHeight = screen.availHeight;
-                
-                setInterval(function() {
+                let x = 0, y = 0;
+                const logoWidth = img.clientWidth || ${logoWidth};
+                const logoHeight = img.clientHeight || ${logoHeight};
+
+                const updateBounds = () => {
+                  winWidth = window.outerWidth;
+                  winHeight = window.outerHeight;
+                  availWidth = screen.availWidth;
+                  availHeight = screen.availHeight;
+                };
+
+                setInterval(() => {
+                  updateBounds();
                   x += dx;
                   y += dy;
-                  // Reverse horizontal direction when hitting screen edges
-                  if (x <= 0 || x + winWidth >= availWidth) {
+
+                  if (x <= 0 || x + logoWidth >= availWidth) {
                     dx = -dx;
                     x += dx;
                   }
-                  // Reverse vertical direction when hitting screen edges
-                  if (y <= 0 || y + winHeight >= availHeight) {
+                  if (y <= 0 || y + logoHeight >= availHeight) {
                     dy = -dy;
                     y += dy;
                   }
